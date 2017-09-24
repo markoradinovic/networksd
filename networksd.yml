@@ -1,0 +1,10 @@
+overlay:
+  networkScope: 172.19.0.0/17
+  subnetMask: 28
+  blacklist:
+    - 172.19.0.0/28
+bridge:
+  networkScope: 172.19.128.0/17
+  subnetMask: 28
+  blacklist:
+    - 172.19.128.0/28
