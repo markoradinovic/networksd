@@ -3,7 +3,7 @@ package cmd
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/markoradinovic/networksd/service"
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"os"
@@ -12,14 +12,14 @@ import (
 var cfgFile string
 var debug bool
 var cfg service.Conf
+var unixSocket string
+var tcpPort int
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "networksd",
 	Short: "Docker Networks Utility",
 	Long:  `Create Docker networks with predefined IP range.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
 		service.StartDaemon(cfg)
 	},
@@ -39,10 +39,8 @@ func init() {
 
 	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/networksd.yaml and networksd current folder)")
 	RootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "enable debug log")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	//RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	RootCmd.PersistentFlags().StringVarP(&unixSocket, "unix-socket", "u", "networksd.sock", "Unix socket (default ./networksd.sock)")
+	RootCmd.PersistentFlags().IntVarP(&tcpPort, "port", "p", 4444, "HPP interface listening port (default: 4444)")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -68,14 +66,15 @@ func initConfig() {
 
 	//bind to debug flag
 	viper.BindPFlag("debug", RootCmd.Flags().Lookup("debug"))
+	viper.BindPFlag("unix-socket", RootCmd.Flags().Lookup("unix-socket"))
+	viper.BindPFlag("port", RootCmd.Flags().Lookup("port"))
 
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		log.Info("Using config file: ", viper.ConfigFileUsed())
+	err := viper.ReadInConfig() // Find and read the config file
+	if err != nil {             // Handle errors reading the config file
+		log.Panicf("Fatal error config file: %s \n", err)
 	}
 
 	if err := viper.Unmarshal(&cfg); err != nil {
 		log.Fatalf("Cannot unmarshal config: %s", err)
 	}
-	log.Info(cfg)
 }

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 )
@@ -21,6 +22,8 @@ func StartDaemon(conf Conf) {
 		log.SetLevel(log.DebugLevel)
 		log.Info("Enabled Debug log level")
 	}
+	log.Info("Using config file: ", viper.ConfigFileUsed())
+
 	ctx := context.Background()
 
 	svc := NewNetworkAddressService(conf)
@@ -36,29 +39,30 @@ func StartDaemon(conf Conf) {
 	}()
 
 	server := &http.Server{Handler: router}
-	file := "test.sock"
+	unixSocket := viper.GetString("unix-socket")
 
 	go func() {
 		//debugPrint("Listening and serving HTTP on unix:/%s", file)
 		//defer func() { debugPrintError(err) }()
 
-		os.Remove(file)
-		listener, err := net.Listen("unix", file)
+		os.Remove(unixSocket)
+		listener, err := net.Listen("unix", unixSocket)
 		if err != nil {
 			errs <- err
 			return
 		}
 		defer listener.Close()
-		log.Info("Listening on unix://", file)
+		log.Info("Listening on unix://", unixSocket)
 
 		errs <- server.Serve(listener)
 		//errs <- http.Serve(listener, router)
 	}()
 
-	//go func() {
-	//	log.Info("transport", "HTTP", "addr", *httpAddr)
-	//	errs <- http.ListenAndServe(*httpAddr, router)
-	//}()
+	httpAddr := ":" + strconv.Itoa(viper.GetInt("port"))
+	go func() {
+		log.Info("Listening on http://0.0.0.0", httpAddr)
+		errs <- http.ListenAndServe(httpAddr, router)
+	}()
 
 	err := <-errs
 	timeoutContext, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -66,7 +70,7 @@ func StartDaemon(conf Conf) {
 	if err := server.Shutdown(timeoutContext); err != nil {
 		log.Fatal("Daemon Shutdown: ", err)
 	}
-	os.Remove(file)
+	os.Remove(unixSocket)
 	log.Info("Daemon Shutdown. [", err, "]")
 
 }

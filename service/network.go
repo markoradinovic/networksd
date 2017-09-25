@@ -17,10 +17,7 @@ var (
 	_, private24BitBlock, _ = net.ParseCIDR("10.0.0.0/8")
 	_, private20BitBlock, _ = net.ParseCIDR("172.16.0.0/12")
 	_, private16BitBlock, _ = net.ParseCIDR("192.168.0.0/16")
-
-	_, testBlock, _ = net.ParseCIDR("172.19.0.0/16")
-
-	OvelayNet = "overlay"
+	OvelayNet               = "overlay"
 )
 
 type NetworkAddressService interface {
@@ -83,6 +80,16 @@ func (svc *networkAddressService) CreateNetwork(ctx context.Context, driver stri
 	conf := svc.bridge
 	if OvelayNet == driver {
 		conf = svc.overlay
+		info, err := svc.cli.Info(ctx)
+		if err != nil {
+			log.Error(err)
+			return types.NetworkCreateResponse{}, err
+		}
+		//i, err := json.Marshal(info)
+		//fmt.Println(string(i))
+		if info.Swarm.LocalNodeState == "inactive" {
+			return types.NetworkCreateResponse{}, ErrNotInSwarmMode
+		}
 	}
 
 	//get all Docker Networks on Host

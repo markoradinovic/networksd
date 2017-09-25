@@ -3,9 +3,11 @@ VET_REPORT = vet.report
 TEST_REPORT = tests.xml
 GOARCH = amd64
 
-VERSION?=?
+VERSION?=0.0.1
 COMMIT=$(shell git rev-parse HEAD)
 BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
+
+GZCMD = tar -czvf
 
 # Symlink into GOPATH
 GITHUB_USERNAME=markoradinovic
@@ -14,7 +16,7 @@ CURRENT_DIR=$(shell pwd)
 BUILD_DIR_LINK=$(shell readlink ${BUILD_DIR})
 
 # Setup the -ldflags option for go build here, interpolate the variable values
-LDFLAGS = -ldflags "-X main.VERSION=${VERSION} -X main.COMMIT=${COMMIT} -X main.BRANCH=${BRANCH}"
+LDFLAGS = -ldflags "-X github.com/markoradinovic/networksd/buildinfo.VERSION=${VERSION} -X github.com/markoradinovic/networksd/buildinfo.COMMIT=${COMMIT} -X github.com/markoradinovic/networksd/buildinfo.BRANCH=${BRANCH}"
 
 # Build the project
 all: link clean test vet linux darwin windows
@@ -37,6 +39,7 @@ linux:
 darwin:
 	cd ${BUILD_DIR}; \
 	GOOS=darwin GOARCH=${GOARCH} go build ${LDFLAGS} -o ${BINARY}-darwin-${GOARCH} . ; \
+	LANG=en_US LC_ALL=en_US $(GZCMD) ${BINARY}-darwin-${GOARCH}.tar.gz ${BINARY}-darwin-${GOARCH} ; \
 	cd - >/dev/null
 
 windows:
