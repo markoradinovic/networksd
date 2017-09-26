@@ -39,7 +39,7 @@ func init() {
 
 	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/networksd.yaml and networksd current folder)")
 	RootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "enable debug log")
-	RootCmd.PersistentFlags().StringVarP(&unixSocket, "unix-socket", "u", "networksd.sock", "Unix socket (default ./networksd.sock)")
+	RootCmd.PersistentFlags().StringVarP(&unixSocket, "unix-socket", "s", "networksd.sock", "Unix socket (default ./networksd.sock)")
 	RootCmd.PersistentFlags().IntVarP(&tcpPort, "port", "p", 4444, "HPP interface listening port (default: 4444)")
 }
 
@@ -62,16 +62,17 @@ func initConfig() {
 		viper.SetConfigName("networksd")
 	}
 
-	viper.AutomaticEnv() // read in environment variables that match
-
 	//bind to debug flag
 	viper.BindPFlag("debug", RootCmd.Flags().Lookup("debug"))
 	viper.BindPFlag("unix-socket", RootCmd.Flags().Lookup("unix-socket"))
 	viper.BindPFlag("port", RootCmd.Flags().Lookup("port"))
 
+	// read in environment variables that match
+	viper.AutomaticEnv()
+
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
-		log.Panicf("Fatal error config file: %s \n", err)
+		log.Fatalf("Fatal error config file: %s \n", err)
 	}
 
 	if err := viper.Unmarshal(&cfg); err != nil {

@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"github.com/markoradinovic/networksd/buildinfo"
+	"github.com/spf13/cobra"
 )
 
 func init() {
